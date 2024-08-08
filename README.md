@@ -65,5 +65,27 @@ For p4 nodes you will see ` vpc.amazonaws.com/efa:  4` and for p5.48xlarge nodes
 > [!TIP]
 > NOTE: If EFA is enabled in the node group, edit the security group that the nodes are attached to and add a rule to allow all outgoing traffic originating from the same security group. This is required for EFA to work.
 
+> [!TIP]
+> NOTE: Do this if your pods are labeled.
+
 # How to test if EFA is working as expected?
+
+
+# How to get real time EFA metrics?
+
+# How to dive deeper with NVIDIA Nsight?
+
+
+# EFA and RDMA
+
+# EFA and Hugepages
+
+
+
+
+
+
+
+
+
 
