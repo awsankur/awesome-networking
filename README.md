@@ -68,6 +68,68 @@ For p4 nodes you will see ` vpc.amazonaws.com/efa:  4` and for p5.48xlarge nodes
 > [!TIP]
 > NOTE: Do this if your pods are labeled.
 
+# How to verify if EFA is installed correctly?
+
+## On a Slurm cluster
+First, ssh into a compute node and run `fi_info` as below. On a `p4de.24xlarge` node, you should see the following output. For a `p5.48xlarge` node you should see 32 `rdmapxxsxx-rdm` instances. The numerical string following `rdmap` remians the same across nodes.
+```
+ubuntu@awsankur-p4de-st-awsankur-p4de-1:~$ fi_info -p efa -t FI_EP_RDM
+provider: efa
+    fabric: efa
+    domain: rdmap16s27-rdm
+    version: 119.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_EFA
+provider: efa
+    fabric: efa
+    domain: rdmap32s27-rdm
+    version: 119.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_EFA
+provider: efa
+    fabric: efa
+    domain: rdmap144s27-rdm
+    version: 119.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_EFA
+provider: efa
+    fabric: efa
+    domain: rdmap160s27-rdm
+    version: 119.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_EFA
+```
+## On a Kubernetes cluster
+Follow steps here: https://github.com/aws-samples/aws-do-eks/tree/main/Container-Root/eks/deployment/efaburn
+
+# Is the EFA security group setup correctly?
+
+To test if the EFA security group is setup correctly, you can run the pingpong test over EFA
+
+## On a slurm cluster
+To test this, we will do a pingpong test over EFA. SSH into a compute node and start a server:
+
+```
+fi_pingpong -p efa
+```
+Then in another shell, ssh into anothe compute node and run a client:
+
+```
+fi_pingpong -p efa <node-name on which server was created>
+```
+On a 2 node `p4de.24xlarge` cluster I see:
+
+```
+bytes   #sent   #ack     total       time     MB/sec    usec/xfer   Mxfers/sec
+64      10      =10      1.2k        0.00s      1.88      34.10       0.03
+256     10      =10      5k          0.00s     12.93      19.80       0.05
+1k      10      =10      20k         0.00s     52.51      19.50       0.05
+4k      10      =10      80k         0.00s    200.78      20.40       0.05
+```
+## On a Kubernetes cluster
+Follow steps here: https://github.com/aws-samples/aws-do-eks/tree/main/Container-Root/eks/deployment/efaburn
+
+
 # How to test if EFA is working as expected?
 
 
