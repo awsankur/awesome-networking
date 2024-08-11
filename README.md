@@ -131,7 +131,14 @@ Follow steps here: https://github.com/aws-samples/aws-do-eks/tree/main/Container
 
 
 # How to test if EFA is working as expected?
+NCCL tests are a standard way to test network bandwidth over EFA. Follow steps here to run [NCCL Tests](https://github.com/aws-samples/awsome-distributed-training/tree/main/micro-benchmarks/nccl-tests)
 
+## Expected Bandwidth
+
+|  EC2 Instance |# EFA devices|Total network bandwidth|Max bandwidth per GPU|          RDMA          |
+|:-------------:|:-----------:|:---------------------:|:-------------------:|:----------------------:|
+| p4de.24xlarge |      4      |        50 GB/s        |                     |    Only Reads          |
+|  p5.48xlarge  |     32      |       400 GB/s        |                     |  Only Writes(for now?) |
 
 # How to get real time EFA metrics?
 
@@ -139,8 +146,11 @@ Follow steps here: https://github.com/aws-samples/aws-do-eks/tree/main/Container
 
 
 # EFA and RDMA
+With RDMA, GPUs across nodes can directly read and write to each other's memory.
 
 # EFA and Hugepages
+Huge pages are a memory management technique used in modern computer systems to improve performance by using larger memory blocks than the default page size. Set `FI_EFA_USE_HUGE_PAGE=0` when you see `os.fork() causes OSError: Cannot allocate memory`. Typically happen by multi-process PyTorch data loader. Disabling huge page causes minor performance hit, but it's needed to prevent fork fails due to the operating system running out of huge pages.
+## Performance improvement with Hugepages
 
 
 
