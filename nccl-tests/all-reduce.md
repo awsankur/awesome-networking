@@ -42,9 +42,23 @@ This result looks very similar with a 1000 iterations:
 We get a bandwidth of ~25 GB/s. Now we must answer the following questions:
 1. Is this expected?
 2. Did we use all 4 EFA devices?
+3. The reported number is an average busbw. What is the variance?
+4. Is the busbw consistent across different GPUs?
 
-Let's dive deeper with a NVIDIA Nsight report
+Let's dive deeper with a NVIDIA Nsight report:
 
-<center><img src="images/all_reduce_25MB_nsight.png" width="80%"/> </br>
+1. We can see from the Nsight report that during this test we used all 4 EFA devices
+2. Why do we see a RDMA read bytes/s at 3.35 GB/s which is the bandwidth for 1 GPU
+3. We can also see that busbw is the same for different GPUs.
+4. We can see `ncclDevKernel_AllReduce_Sum_f32_TREE_LL` CUDA kernels being used which tells us 4 things:
+   * We use the `Sum` all reduce operation as specified in the srun command. 
+   * We do this operation on float32 numbers
+   * TREE
+   * We use the LL NCCL Protocol
+   * We use the `Tree` NCCL Algorithm
+   * NCCL Protocol and Algori
+
+
+<center><img src="../images/all_reduce_25MB_nsight.png" width="80%"/> </br>
 </center>
 
