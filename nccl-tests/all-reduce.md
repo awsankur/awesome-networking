@@ -56,9 +56,13 @@ Let's dive deeper with a NVIDIA Nsight report:
    * TREE
    * We use the LL NCCL Protocol
    * We use the `Tree` NCCL Algorithm
-   * NCCL Protocol and Algori
+   * Choice of NCCL Protocol and Algorigthms could have a strong impact on performance especially at scale and is automatically selected by NCCL - https://developer.nvidia.com/blog/massively-scale-deep-learning-training-nccl-2-4/
 
 
 <center><img src="../images/all_reduce_25MB_nsight.png" width="80%"/> </br>
 </center>
 
+5. Finally, from the Nsight report, we can capture `durations` and estimate variance:
+
+<center><img src="../images/all_reduce_sum_25MB.png" width="80%"/> </br>
+</center>
