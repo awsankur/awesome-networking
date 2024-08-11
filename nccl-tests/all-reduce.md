@@ -45,5 +45,6 @@ We get a bandwidth of ~25 GB/s. Now we must answer the following questions:
 
 Let's dive deeper with a NVIDIA Nsight report
 
-
+<center><img src="images/all_reduce_25MB_nsight.png" width="80%"/> </br>
+</center>
 
