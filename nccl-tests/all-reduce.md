@@ -62,7 +62,12 @@ Let's dive deeper with a NVIDIA Nsight report:
 <center><img src="../images/all_reduce_25MB_nsight.png" width="80%"/> </br>
 </center>
 
-5. Finally, from the Nsight report, we can capture `durations` and estimate variance:
+5. Finally, from the Nsight report, we can capture `durations` and estimate variance to be roughly about 5%.
 
 <center><img src="../images/all_reduce_sum_25MB.png" width="80%"/> </br>
+</center>
+
+6. Does the variance increase as message size increases? Variance looks to be the same at 5%.
+
+<center><img src="../images/all_reduce_sum_2GB.png" width="80%"/> </br>
 </center>
