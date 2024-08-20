@@ -71,3 +71,7 @@ Let's dive deeper with a NVIDIA Nsight report:
 
 <center><img src="../images/all_reduce_sum_2GB.png" width="80%"/> </br>
 </center>
+
+
+Resources: https://github.com/stas00/ml-engineering/blob/master/network/benchmarks/all_reduce_bench.py
+
