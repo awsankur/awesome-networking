@@ -53,8 +53,8 @@ ubuntu@ip-10-0-91-215:~$ aws ec2 describe-instance-topology --instance-ids "i-05
 A couple of pints to keep in mind:
 
 1. Cluster PGs have a non oversubscribed Spine and Brick architecture
-2. If 2 network nodes are in common, nodes are on the same spine
-3. If 3 network nodes are in common, nodes are on the same brick
+2. **If 2 network nodes are in common, nodes are on the same spine**
+3. **If 3 network nodes are in common, nodes are on the same brick**
 4. 102.4Tbps bandwith per brick
 5. Up to 256 P4 servers per brick (4 servers /rack)
 6. One-way latency TOR<>TOR via Spine: 10us
