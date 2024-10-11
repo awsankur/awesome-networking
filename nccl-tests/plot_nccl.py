@@ -17,27 +17,42 @@ c=0
 for one_node in nnodes:
 
     print(f'Processing NCCL Test for {one_node} nodes')
+
+    kernel_df = pd.read_csv(f'./kernel_dfs/kernel_df_nodes_{one_node}.csv')
+    nccldf = kernel_df[kernel_df['name']=='ncclDevKernel_AllReduce_Sum_f32_TREE_LL']
+    df = nccldf.copy()
+    df['duration_ms'] = nccldf['duration']/1000000
     
-    df = pd.read_excel('p5_all_red_25mb.xlsx',sheet_name=f'nodes{one_node}')
+    #df = pd.read_excel('p5_all_red_25mb.xlsx',sheet_name=f'nodes{one_node}')
 
-    df[['duration_ms','unit']] = df['Duration'].str.split(' ',expand = True)
-    df['duration_ms'] = df['duration_ms'].astype(float)
-    df.loc[df['unit']=='μs','duration_ms']=0.001*df.loc[df['unit']=='μs','duration_ms']
+    #df[['duration_ms','unit']] = df['Duration'].str.split(' ',expand = True)
+    #df['duration_ms'] = df['duration_ms'].astype(float)
+    #df.loc[df['unit']=='μs','duration_ms']=0.001*df.loc[df['unit']=='μs','duration_ms']
 
-    # Ignore anything beyond 25ms
+    # Ignore anything beyond 99th percentile
     df = df[df['duration_ms'] < df['duration_ms'].quantile(0.99)]
 
     NCCL_Test_allreduce = NCCL_Test_allreduce_ms[c]
 
-    df.hist(column = 'duration_ms',ax = axes[axes_row_list[c],axes_col_list[c]], 
-             density=True, bins=100, edgecolor='blue')
+    print(NCCL_Test_allreduce)
+
+    ax1 = axes[axes_row_list[c],axes_col_list[c]]
+
+    df.hist(column = 'duration_ms',ax = ax1, density=True, bins=100, edgecolor='blue')
     
-    axes[axes_row_list[c],axes_col_list[c]].axvline(NCCL_Test_allreduce, color='k', linestyle='dashed', linewidth=1) 
-    axes[axes_row_list[c],axes_col_list[c]].set_title(f'nnodes = {one_node}')
+    ax1.axvline(NCCL_Test_allreduce, color='k', linestyle='dashed', linewidth=1) 
+
+    ax1.text(NCCL_Test_allreduce, 0.5, f'NCCL Test Avg', color='r', 
+             rotation=90, va='center', ha='center',
+             transform=ax1.get_xaxis_transform(), 
+             bbox=dict(facecolor='white', alpha=0.8, edgecolor='none'))
+    
+    ax1.set_title(f'nnodes = {one_node}')
     c=c+1
 
 plt.suptitle(f'P5 All Reduce:Sum Message Size = 25 MB Num nodes = {one_node}', fontsize=16, fontweight='bold')
 plt.savefig(f'histogram_all_reduce_sum_25MB_P5_nodes_{one_node}.png')
+#plt.show()
 
 
 # Create subplots
@@ -50,12 +65,17 @@ c=0
 for one_node in nnodes:
 
     print(f'Processing NCCL Test for {one_node} nodes')
-    
-    df = pd.read_excel('p5_all_red_25mb.xlsx',sheet_name=f'nodes{one_node}')
 
-    df[['duration_ms','unit']] = df['Duration'].str.split(' ',expand = True)
-    df['duration_ms'] = df['duration_ms'].astype(float)
-    df.loc[df['unit']=='μs','duration_ms']=0.001*df.loc[df['unit']=='μs','duration_ms']
+    kernel_df = pd.read_csv(f'./kernel_dfs/kernel_df_nodes_{one_node}.csv')
+    nccldf = kernel_df[kernel_df['name']=='ncclDevKernel_AllReduce_Sum_f32_TREE_LL']
+    df = nccldf.copy()
+    df['duration_ms'] = nccldf['duration']/1000000
+    
+    #df = pd.read_excel('p5_all_red_25mb.xlsx',sheet_name=f'nodes{one_node}')
+
+    #df[['duration_ms','unit']] = df['Duration'].str.split(' ',expand = True)
+    #df['duration_ms'] = df['duration_ms'].astype(float)
+    #df.loc[df['unit']=='μs','duration_ms']=0.001*df.loc[df['unit']=='μs','duration_ms']
 
     NCCL_Test_allreduce = NCCL_Test_allreduce_ms[c]
 
@@ -67,10 +87,11 @@ for one_node in nnodes:
     # Plot p99
     y_position = df['duration_ms'].quantile(0.99)
     axes[axes_row_list[c],axes_col_list[c]].axhline(y = y_position, color='k', linestyle='dashed', linewidth=1)
+    axes[axes_row_list[c],axes_col_list[c]].set_title(f'nnodes = {one_node}')
     # Add text on the horizontal line
     ax1 = axes[axes_row_list[c],axes_col_list[c]]
-    #ax1.text(0.25, 10, f'p99 latency = {y_position:.2f} ms', color='r', va='center', ha='center',
-    #    transform=ax1.get_yaxis_transform(), bbox=dict(facecolor='white', alpha=0.8, edgecolor='none'))
+    ax1.text(0.25, y_position, f'p99 latency = {y_position:.2f} ms', color='r', va='center', ha='center',
+        transform=ax1.get_yaxis_transform(), bbox=dict(facecolor='white', alpha=0.8, edgecolor='none'))
     
     #axes[axes_row_list[c],axes_col_list[c]].set_title(f'nnodes = {one_node}')
 
@@ -81,5 +102,31 @@ for one_node in nnodes:
 plt.suptitle(f'P5 All Reduce:Sum Message Size = 25 MB Num nodes = {one_node}', fontsize=16, fontweight='bold')
 
 plt.tight_layout()
-#plt.savefig(f'lineplot_all_reduce_sum_25MB_P5_nodes_{one_node}.png')
-plt.show()   
+plt.savefig(f'lineplot_all_reduce_sum_25MB_P5_nodes_{one_node}.png')
+
+## Scaling plots
+
+p50_list = []
+p75_list = []
+p95_list = []
+p99_list = []
+pmax_list = []
+c=0
+for one_node in nnodes:
+
+    print(f'Processing NCCL Test for {one_node} nodes')
+
+    kernel_df = pd.read_csv(f'./kernel_dfs/kernel_df_nodes_{one_node}.csv')
+    nccldf = kernel_df[kernel_df['name']=='ncclDevKernel_AllReduce_Sum_f32_TREE_LL']
+    df = nccldf.copy()
+    df['duration_ms'] = nccldf['duration']/1000000
+
+    p50_list.append(df['duration_ms'].quantile(0.50))
+    p75_list.append(df['duration_ms'].quantile(0.75))
+    p95_list.append(df['duration_ms'].quantile(0.95))
+    p99_list.append(df['duration_ms'].quantile(0.99))
+    pmax_list.append(max(df['duration_ms']))
+
+
+p_df = pd.DataFrame(list(zip(nnodes,p50_list,p75_list,p95_list,p99_list,pmax_list)),columns = ['nnodes','p50_ms','p75_ms','p95_ms','p99_ms','pmax_ms'])
+    
