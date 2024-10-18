@@ -1,29 +1,46 @@
 import argparse
 
-def convert_to_MB(nccl_msg_size_number,nccl_msg_size_unit):
-    if nccl_msg_size_unit == 'M':
-        return int(nccl_msg_size_number)
+def convert_to_Bytes(nccl_msg_size_number,nccl_msg_size_unit):
     if nccl_msg_size_unit == 'G':
-        return 1000*int(nccl_msg_size_number)
+        return 1024*1024*1024*int(nccl_msg_size_number)
+    if nccl_msg_size_unit == 'M':
+        return 1024*1024*int(nccl_msg_size_number)
     if nccl_msg_size_unit == 'K':
-        return 0.001*int(nccl_msg_size_number)
+        return 1024*int(nccl_msg_size_number)
+    if nccl_msg_size_unit == 'B':
+        return int(nccl_msg_size_number)
+
+def check_for_bytes(nccl_message_size):
+    # Check if input is in Bytes
+    if nccl_message_size[-1] not in ['K','M','G']:
+        return(True)
 
 
 def generate_nccl_msg_list(nccl_message_size_begin,nccl_message_size_end):
-    nccl_message_size_begin_number = nccl_message_size_begin[0:-1]
-    nccl_message_size_begin_unit = nccl_message_size_begin[-1]
 
-    nccl_message_size_end_number = nccl_message_size_end[0:-1]
-    nccl_message_size_end_unit = nccl_message_size_end[-1]
+    if check_for_bytes(nccl_message_size_begin):
+        nccl_message_size_begin_number = nccl_message_size_begin
+        nccl_message_size_begin_unit = 'B'
+    else:
+        nccl_message_size_begin_number = nccl_message_size_begin[0:-1]
+        nccl_message_size_begin_unit = nccl_message_size_begin[-1]
 
-    nccl_message_size_begin_number_MB = convert_to_MB(nccl_message_size_begin_number,
+    if check_for_bytes(nccl_message_size_end):
+        nccl_message_size_end_number = nccl_message_size_end
+        nccl_message_size_end_unit = 'B'
+    else:
+        nccl_message_size_end_number = nccl_message_size_end[0:-1]
+        nccl_message_size_end_unit = nccl_message_size_end[-1]
+
+
+    nccl_message_size_begin_number_Bytes = convert_to_Bytes(nccl_message_size_begin_number,
                                                   nccl_message_size_begin_unit)
-    nccl_message_size_end_number_MB = convert_to_MB(nccl_message_size_end_number,
+    nccl_message_size_end_number_Bytes = convert_to_Bytes(nccl_message_size_end_number,
                                                   nccl_message_size_end_unit)
 
-    nccl_msg_size = nccl_message_size_begin_number_MB
+    nccl_msg_size = nccl_message_size_begin_number_Bytes
     nccl_msg_size_list = []
-    while nccl_msg_size <= nccl_message_size_end_number_MB:
+    while nccl_msg_size <= nccl_message_size_end_number_Bytes:
         nccl_msg_size_list.append(str(nccl_msg_size))
         nccl_msg_size = nccl_msg_size * 2
 
