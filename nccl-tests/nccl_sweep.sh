@@ -30,18 +30,3 @@ do
 
 done
 
-# Submit jobs to generate recipes if Nsight reports are generated
-for nnodes in "${nnodes_list[@]}"
-do
-	FILE_TO_CHECK="${WORKING_PATH}/*.nsys-rep"
-
-	# Check if the file exists
-	if [ -f "$FILE_TO_CHECK" ]; then
-		# Submit the SLURM job
-		echo "Nsight report present."
-	else
-    		echo "File not found. Job not submitted."
-	fi
-
-
-done
