@@ -18,7 +18,7 @@ We will use `nsys recipe` to automatically extract NCCL kernel durations from Ns
 
 ```
 cd /fsxl/nsight-efa/target-linux-x64/python/packages/nsys_recipe/recipes/cuda_gpu_kern_sum/
-Find the `_mapper_fund` function in `CudaGpuKernSum` class
+Find the `_mapper_func` function in `CudaGpuKernSum` class
 Add `kernel_df.to_csv('./kernel_df.csv')` line at the bottom of the function
 ```
 ## Explanation of files
