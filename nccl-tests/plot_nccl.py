@@ -256,44 +256,87 @@ for one_node in nnodes:
      # Create subplots
     fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(15, 15))
 
-    ax1 = axes[0,0]
+    
     # List of colors
     colors = ['red', 'green', 'blue']
 
+    chunk_size = len(latency_one_node_df) // 4
+
+    # Split the DataFrame into 4 parts
+    df1 = latency_one_node_df.iloc[:chunk_size]
+    df1 = df1.reset_index()
+    
+    df2 = latency_one_node_df.iloc[chunk_size:2*chunk_size]
+    df2 = df2.reset_index()
+
+    df3 = latency_one_node_df.iloc[2*chunk_size:3*chunk_size]
+    df3 = df3.reset_index()
+
+    df4 = latency_one_node_df.iloc[3*chunk_size:]
+    df4 = df4.reset_index()
+
+    
+    
+    ax1 = axes[0,0]
     # Plot each column as a separate line
-    ax1.plot(latency_one_node_df['nccl_msg_size'], latency_one_node_df['p50_ms'], color='red',
+    ax1.plot(df1['nccl_msg_size'], df1['p50_ms'], color='red',
                      label='p50_ms', linewidth=2, linestyle='--', marker='o')
-    ax1.plot(latency_one_node_df['nccl_msg_size'], latency_one_node_df['p75_ms'], color='green',
+    ax1.plot(df1['nccl_msg_size'], df1['p75_ms'], color='green',
                      label='p75_ms', linewidth=2, linestyle='--', marker='o')
-    ax1.plot(latency_one_node_df['nccl_msg_size'], latency_one_node_df['p95_ms'], color='blue',
+    ax1.plot(df1['nccl_msg_size'], df1['p95_ms'], color='blue',
                      label='p95_ms', linewidth=2, linestyle='--', marker='o')
 
     # Add legend and labels
     ax1.legend()
     ax1.set_xlabel('NCCL Msg Size Bytes', fontsize=10, fontweight='bold')
-    ax1.tick_params(axis='x', labelrotation=45)
+    #ax1.tick_params(axis='x', labelrotation=45)
     ax1.set_ylabel('Latency in ms', fontsize=10, fontweight='bold')
     ax1.set_title(f'P5 {NCCL_Collective} Number of nodes = {one_node}', fontsize=16, fontweight='bold')
 
     ax2 = axes[0,1]
-    ax2.plot(latency_one_node_df['nccl_msg_size'], latency_one_node_df['p99_ms'], 'black',
-                     label='p99_ms', linewidth=2, linestyle='--', marker='o')
+    # Plot each column as a separate line
+    ax2.plot(df2['nccl_msg_size'], df2['p50_ms'], color='red',
+                     label='p50_ms', linewidth=2, linestyle='--', marker='o')
+    ax2.plot(df2['nccl_msg_size'], df2['p75_ms'], color='green',
+                     label='p75_ms', linewidth=2, linestyle='--', marker='o')
+    ax2.plot(df2['nccl_msg_size'], df2['p95_ms'], color='blue',
+                     label='p95_ms', linewidth=2, linestyle='--', marker='o')
+
     # Add legend and labels
     ax2.legend()
     ax2.set_xlabel('NCCL Msg Size Bytes', fontsize=10, fontweight='bold')
-    ax2.tick_params(axis='x', labelrotation=45)
+    #ax2.tick_params(axis='x', labelrotation=45)
     ax2.set_ylabel('Latency in ms', fontsize=10, fontweight='bold')
-    ax2.set_title('P99 Latency', fontsize=16, fontweight='bold')
+    ax2.set_title(f'P5 {NCCL_Collective} Number of nodes = {one_node}', fontsize=16, fontweight='bold')
+
 
     ax3 = axes[1,0]
-    ax3.plot(latency_one_node_df['nccl_msg_size'], latency_one_node_df['pmax_ms'], 'black',
-                     label='pmax_ms', linewidth=2, linestyle='--', marker='o')
+    ax3.plot(df3['nccl_msg_size'], df3['p50_ms'], color='red',
+                     label='p50_ms', linewidth=2, linestyle='--', marker='o')
+    ax3.plot(df3['nccl_msg_size'], df3['p75_ms'], color='green',
+                     label='p75_ms', linewidth=2, linestyle='--', marker='o')
+    ax3.plot(df3['nccl_msg_size'], df3['p95_ms'], color='blue',
+                     label='p95_ms', linewidth=2, linestyle='--', marker='o')
     # Add legend and labels
     ax3.legend()
     ax3.set_xlabel('NCCL Msg Size Bytes', fontsize=10, fontweight='bold')
-    ax3.tick_params(axis='x', labelrotation=45)
+    #ax3.tick_params(axis='x', labelrotation=45)
     ax3.set_ylabel('Latency in ms', fontsize=10, fontweight='bold')
-    ax3.set_title('Max Latency', fontsize=16, fontweight='bold')
+    
+
+    ax4 = axes[1,1]
+    ax4.plot(df4['nccl_msg_size'], df4['p50_ms'], color='red',
+                     label='p50_ms', linewidth=2, linestyle='--', marker='o')
+    ax4.plot(df4['nccl_msg_size'], df4['p75_ms'], color='green',
+                     label='p75_ms', linewidth=2, linestyle='--', marker='o')
+    ax4.plot(df4['nccl_msg_size'], df4['p95_ms'], color='blue',
+                     label='p95_ms', linewidth=2, linestyle='--', marker='o')
+    # Add legend and labels
+    ax4.legend()
+    ax4.set_xlabel('NCCL Msg Size Bytes', fontsize=10, fontweight='bold')
+    #ax4.tick_params(axis='x', labelrotation=45)
+    ax4.set_ylabel('Latency in ms', fontsize=10, fontweight='bold')
+    
 
     plt.tight_layout()
     plt.savefig(f'{PLOT_PATH}/scaling_vs_nccl_msg_size_nodes_{one_node}_P5.png')
