@@ -74,4 +74,5 @@ Let's dive deeper with a NVIDIA Nsight report:
 
 
 Resources: https://github.com/stas00/ml-engineering/blob/master/network/benchmarks/all_reduce_bench.py
+https://andrew.gibiansky.com/blog/machine-learning/baidu-allreduce/
 
