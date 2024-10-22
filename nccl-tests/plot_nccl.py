@@ -248,7 +248,10 @@ for one_node in nnodes:
 
     print(f'Generating Latency vs NCCL Msg Size plots for {one_node} nodes')
 
-    latency_one_node_df = latency_df.loc[latency_df['nnodes']==one_node,]
+    unsorted_latency_one_node_df = latency_df.loc[latency_df['nnodes']==one_node,]
+
+    latency_one_node_df = unsorted_latency_one_node_df.sort_values(by='nccl_msg_size')
+    latency_one_node_df = latency_one_node_df.reset_index()
 
      # Create subplots
     fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(15, 15))
@@ -258,14 +261,17 @@ for one_node in nnodes:
     colors = ['red', 'green', 'blue']
 
     # Plot each column as a separate line
-    for i, column in enumerate(latency_one_node_df.columns[1:]):
-        if i < 3:
-            ax1.plot(latency_one_node_df['nccl_msg_size'], latency_one_node_df[column], color=colors[i],
-                     label=column, linewidth=2, linestyle='--', marker='o')
+    ax1.plot(latency_one_node_df['nccl_msg_size'], latency_one_node_df['p50_ms'], color='red',
+                     label='p50_ms', linewidth=2, linestyle='--', marker='o')
+    ax1.plot(latency_one_node_df['nccl_msg_size'], latency_one_node_df['p75_ms'], color='green',
+                     label='p75_ms', linewidth=2, linestyle='--', marker='o')
+    ax1.plot(latency_one_node_df['nccl_msg_size'], latency_one_node_df['p95_ms'], color='blue',
+                     label='p95_ms', linewidth=2, linestyle='--', marker='o')
 
     # Add legend and labels
     ax1.legend()
     ax1.set_xlabel('NCCL Msg Size Bytes', fontsize=10, fontweight='bold')
+    ax1.tick_params(axis='x', labelrotation=45)
     ax1.set_ylabel('Latency in ms', fontsize=10, fontweight='bold')
     ax1.set_title(f'P5 {NCCL_Collective} Number of nodes = {one_node}', fontsize=16, fontweight='bold')
 
@@ -275,6 +281,7 @@ for one_node in nnodes:
     # Add legend and labels
     ax2.legend()
     ax2.set_xlabel('NCCL Msg Size Bytes', fontsize=10, fontweight='bold')
+    ax2.tick_params(axis='x', labelrotation=45)
     ax2.set_ylabel('Latency in ms', fontsize=10, fontweight='bold')
     ax2.set_title('P99 Latency', fontsize=16, fontweight='bold')
 
@@ -284,9 +291,9 @@ for one_node in nnodes:
     # Add legend and labels
     ax3.legend()
     ax3.set_xlabel('NCCL Msg Size Bytes', fontsize=10, fontweight='bold')
+    ax3.tick_params(axis='x', labelrotation=45)
     ax3.set_ylabel('Latency in ms', fontsize=10, fontweight='bold')
     ax3.set_title('Max Latency', fontsize=16, fontweight='bold')
 
     plt.tight_layout()
     plt.savefig(f'{PLOT_PATH}/scaling_vs_nccl_msg_size_nodes_{one_node}_P5.png')
-
