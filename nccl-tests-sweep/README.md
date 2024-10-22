@@ -10,8 +10,17 @@ We require that you have:
 
 1. A slurm cluster available of `p5.48xlarge` nodes
 2. You have NCCL test Docker image built and Enroot `.sqsh` file created. You can follow the steps here: https://github.com/aws-samples/awsome-distributed-training/tree/main/micro-benchmarks/nccl-tests
-3. You have Nsight pre-installed. Follow steps here to install latest releases of Nsight: https://github.com/aws-samples/awsome-distributed-training/tree/main/4.validation_and_observability/5.nsight
+3. You have Nsight pre-installed at `/fsxl/nsight-efa`. Follow steps here to install latest releases of Nsight: https://github.com/aws-samples/awsome-distributed-training/tree/main/4.validation_and_observability/5.nsight
 
+## Automated data extraction from Nsight profile
+
+We will use `nsys recipe` to automatically extract NCCL kernel durations from Nsight reports. To do so, follow these steps:
+
+```
+cd /fsxl/nsight-efa/target-linux-x64/python/packages/nsys_recipe/recipes/cuda_gpu_kern_sum/
+Find the `_mapper_fund` function in `CudaGpuKernSum` class
+Add `kernel_df.to_csv('./kernel_df.csv')` line at the bottom of the function
+```
 ## Explanation of files
 
 1. nccl_test_template.sbatch -- Slurm submission sbatch script template for NCCL Test
