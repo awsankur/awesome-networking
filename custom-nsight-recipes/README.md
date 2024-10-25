@@ -150,6 +150,50 @@ When a recipe is called, the following things happen in order:
 2. `run` function `my_custom_recipe.py` sends the inputs such as nsys profile name, filter-time etc to the `_mapper_func` in `MyCustomRecipe` class.
 3. `service` is created by `data_service.py` which has the tooling to read the Nsight report after converting it to a parquet format.
 
+You can use the following to pull the right data for your recipe:
+
+1. Cuda GPU Kernel Data: `service.queue_table("CUPTI_ACTIVITY_KIND_KERNEL", ["shortName", "start", "end", "deviceId"])`
+2. NVTX Data: `service.queue_custom_table(CompositeTable.NVTX)`
+3. NCCL Data: `service.queue_custom_table(CompositeTable.NCCL)`
+4. OSRT Data: `service.queue_table("OSRT_API", ["nameId", "start", "end"])`
+5. MPI Data: `service.queue_table("OSRT_API", ["nameId", "start", "end"])`
+
+To pull data in pandas data frames: `df_dict = service.read_queued_tables()`. `df_dict` will be a dictionary of all queued tables as data frames.
+
+Next filter and adjust time as: `service.filter_and_adjust_time(kernel_df)`
+
+Replace string ids with values as: `kernel_df = data_utils.replace_id_with_value(
+            kernel_df, df_dict["StringIds"], "shortName", "name")`
+
+An example recipe is provided in `my_custom_recipe.py`
+
+### Custom Composite Table
+
+You can create a custom `CompositeTable` like NVTX and NCCL tables as below:
+
+1. Find the `table_config.py` file in `/fsxl/nsight-efa/target-linux-x64/python/packages/nsys_recipe/lib`
+2. Add the name of the custom composite table in `CompositeTable` and assign an integer like 
+
+```
+class CompositeTable(Enum):
+    CUDA_GPU = 0
+    CUDA_GPU_GRAPH = 1
+    CUDA_COMBINED = 2
+    CUDA_COMBINED_KERNEL = 3
+    NVTX = 4
+    NCCL = 5
+    NIC = 6
+    IB_SWITCH = 7
+    MPI = 8
+    UCX = 9
+    AWS_OFI_NCCL = 10
+```
+3. Find `get_table_column_dict` and add `CompositeTable.AWS_OFI_NCCL: get_aws_ofi_dict` in `table_dict_map`. Or if you want to reuse an existing table dictionary such as `get_nvtx_dict`.
+4. Find `get_refine_func` and add `CompositeTable.AWS_OFI_NCCL: process_to_aws_ofi_table` in `table_func_map`.
+5. Next you would have to add `get_aws_ofi_dict` and `process_to_aws_ofi_table` functions
+
+
+
 
 
 
