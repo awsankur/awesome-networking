@@ -19,6 +19,7 @@ from nsys_recipe.lib import data_utils, helpers, recipe, summary
 from nsys_recipe.lib.args import Option
 from nsys_recipe.log import logger
 from nsys_recipe.lib.table_config import CompositeTable
+from nsys_recipe.lib import helpers, pace, recipe, summary
 
 class MyCustomRecipe(recipe.Recipe):
     @staticmethod
@@ -26,33 +27,34 @@ class MyCustomRecipe(recipe.Recipe):
 
         service = DataService(report_path, parsed_args)
 
-        service.queue_custom_table(CompositeTable.AWS_OFI_NCCL)
-
-        df_dict = service.read_queued_tables()
-        if df_dict is None:
-            return None
-
-        print(df_dict)
-        #for i in len(df_dict):
-        #    df_dict[i].to_csv(f'df_{i}.csv')
-
-
-        nvtx_df = df_dict[CompositeTable.AWS_OFI_NCCL]
-
-        nvtx_df.to_csv('./nvtx_df.csv')
-
-        #import pdb;pdb.set_trace()
-
-
+        # Get String Ids
         service.queue_table("StringIds")
-        service.queue_table(
-            "CUPTI_ACTIVITY_KIND_KERNEL", ["shortName", "start", "end", "deviceId"]
-        )
 
+        # Target Info??
+        #service.queue_table("TARGET_INFO_SESSION_START_TIME")
+
+        # Get Cuda GPU Kernel Data
+        service.queue_table("CUPTI_ACTIVITY_KIND_KERNEL", ["shortName", "start", "end", "deviceId"])
+
+        # Get NVTX Data
+        #service.queue_custom_table(CompositeTable.NVTX)
+
+        # Get NCCL Data
+        #service.queue_custom_table(CompositeTable.NCCL)
+
+        # OSRT Data
+        #service.queue_table("OSRT_API", ["nameId", "start", "end"])
+
+        # MPI Data
+        #service.queue_custom_table(CompositeTable.MPI)
+
+        # Create data frames
         df_dict = service.read_queued_tables()
         if df_dict is None:
             return None
 
+
+        
         kernel_df = df_dict["CUPTI_ACTIVITY_KIND_KERNEL"]
         service.filter_and_adjust_time(kernel_df)
 
@@ -66,11 +68,11 @@ class MyCustomRecipe(recipe.Recipe):
             )
             return None
 
+
         kernel_df["duration"] = kernel_df["end"] - kernel_df["start"]
         kernel_df = kernel_df[kernel_df["duration"] > 0]
 
-        kernel_df.to_csv('./kernel_df.csv')
-
+        
         stats_df = summary.describe_column(kernel_df.groupby(["name"])["duration"])
         stats_df.index.name = "Name"
 
