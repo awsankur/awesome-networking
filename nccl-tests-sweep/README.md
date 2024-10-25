@@ -4,7 +4,7 @@ In this section, we present a framework to run sweeps over different configurati
 
 The motivation behind this work is to understand how p50, p95, p99 latencies vary with different combinations of NCCL Collectives, number of nodes and NCCL message sizes. 
 
-## Pre-requisities
+## Pre-requisites
 
 We require that you have:
 
