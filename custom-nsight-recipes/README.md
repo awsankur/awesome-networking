@@ -142,6 +142,13 @@ Recipe:
                         used
 ```
 
+If you need a Jupyter notebook to be produced as part of the recipe, a template needs to be present. Popular templates from existing recipes include - `stats.ipynb, heatmap.ipynb, trace.ipynb, pace.ipynb, topN.ipynb, analysis.ipynb, histogram.ipynb`
+
+When a recipe is called, the following things happen in order:
+
+1. `run_recipe` function in `__main__.py` calls the run function in `my_custom_recipe.py`
+2. `run` function `my_custom_recipe.py` sends the inputs such as nsys profile name, filter-time etc to the `_mapper_func` in `MyCustomRecipe` class.
+3. `service` is created by `data_service.py` which has the tooling to read the Nsight report after converting it to a parquet format.
 
 
 
