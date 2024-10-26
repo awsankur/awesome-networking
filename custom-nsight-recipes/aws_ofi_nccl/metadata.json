@@ -1,0 +1,6 @@
+{
+    "module_name": "aws_ofi_nccl_recipe",
+    "display_name": "Custom Recipe for aws ofi nccl traces",
+    "description": "This recipe is to analyze aws ofi nccl nvtx traces",
+    "type": "stats"
+}
