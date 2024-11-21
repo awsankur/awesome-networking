@@ -30,6 +30,8 @@ class AwsOfiNcclRecipe(recipe.Recipe):
 
         service = DataService(report_path, parsed_args)
 
+        service.queue_table("StringIds")
+
         # Get Cuda GPU Kernel Data
         service.queue_table("CUPTI_ACTIVITY_KIND_KERNEL", ["shortName", "start", "end", "deviceId"])
 
@@ -58,12 +60,10 @@ class AwsOfiNcclRecipe(recipe.Recipe):
         kernel_df["duration"] = kernel_df["end"] - kernel_df["start"]
         kernel_df = kernel_df[kernel_df["duration"] > 0]
 
-
-        kernel_df = kernel_df_orig.sort_values(by='start')
         nccldf = kernel_df[kernel_df.apply(lambda x: x.astype(str).str.contains('nccl', case=False).any(), axis=1)]
 
         nvtx_df = df_dict[CompositeTable.NVTX]
-        service.filter_and_adjust_time(nvtx_df)
+        ##service.filter_and_adjust_time(nvtx_df)
 
         ##nvtx_df.to_csv('./nvtx_df.csv')
 
@@ -75,15 +75,8 @@ class AwsOfiNcclRecipe(recipe.Recipe):
 
         filename = Path(report_path).stem
 
-        nccldf.to_parquet(self.add_output_file("nccldf.parquet"))
-        nvtx_df.to_parquet(self.add_output_file("nvtx_df.parquet"))
-
-        if self._parsed_args.csv:
-            nccldf.to_csv(self.add_output_file("nccldf.csv"))
-            nvtx_df.to_csv(self.add_output_file("nvtx_df.csv"))
-
         return filename, nccldf, nvtx_df
-        
+
 
     @log.time("Mapper")
     def mapper_func(self, context):
@@ -96,10 +89,15 @@ class AwsOfiNcclRecipe(recipe.Recipe):
         )
 
     def get_domain_ids(self,mapper_res):
-        filtered_res = helpers.filter_none(mapper_res)
+        #filtered_res = helpers.filter_none(mapper_res)
+        filtered_res = mapper_res
         # Sort by file name.
         filtered_res = sorted(filtered_res, key=lambda x: x[0])
-        filenames, nccldf, nvtx_df = zip(*filtered_res)
+        filenames, nccldf_tuple, nvtx_df_tuple = zip(*filtered_res)
+
+        nccldf = nccldf_tuple[0]
+        nvtx_df = nvtx_df_tuple[0]
+
 
         domain_df = nvtx_df.loc[nvtx_df['text'].str.contains('aws', case=False)==True,]
 
@@ -109,40 +107,102 @@ class AwsOfiNcclRecipe(recipe.Recipe):
 
         domain_names = domain_df['text'].to_list()
 
+        domain_Id_min = min(domain_df['domainId'])
+        domain_Id_max = max(domain_df['domainId'])
+
         aws_ofi_nccl_df = nvtx_df.loc[(nvtx_df['domainId']>=domain_Id_min)
                                 & (nvtx_df['domainId']<=domain_Id_max),]
 
-        
+        data_path = f'{self.get_output_dir()}/data'
+        os.makedirs(data_path, exist_ok=True)
+
+        nccldf.to_parquet(f"{data_path}/nccldf.parquet")
+        nvtx_df.to_parquet(f"{data_path}/nvtx_df.parquet")
+
+        if self._parsed_args.csv:
+            nccldf.to_csv(f"{data_path}/nccldf.csv")
+            nvtx_df.to_csv(f"{data_path}/nccldf.csv")
+
         # Domain ID ==0 for Eagr_recv??
         return (aws_ofi_nccl_df, domain_df, send_domain_ids, recv_domain_ids, domain_names)
 
-    def plot_send_events(aws_ofi_nccl_df, send_domain_ids, domain_names):
+    def plot_send_receive_events(self,aws_ofi_nccl_df,domain_ids,domain_names,send_or_recv_tag):
 
-
-        for i in send_domain_ids:
+        for i in domain_ids:
 
             domain_name = domain_names[i-2]
 
-            os.makedirs(f'{self.get_output_dir()}/{domain_name}', exist_ok=True)
+            print(f'Generating {send_or_recv_tag} event plots for {domain_name}....')
+            plot_path = f'{self.get_output_dir()}/plots/{domain_name}'
+
+            os.makedirs(plot_path, exist_ok=True)
 
             # Create subplots
             fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(12, 10))
-            
-            one_send_df = aws_ofi_nccl_df.loc[(aws_ofi_nccl_df['domainId']==i) & 
-                                           (aws_ofi_nccl_df['text']=='Send'),]
-            
-            one_send_df = one_send_df.reset_index()
 
-            one_send_df['duration_micro_s'] = (one_send_df['end'] - one_send_df['start'])/1000
-            one_send_df.hist(column = 'duration_micro_s', ax = axes[0],density=True, bins=100, edgecolor='blue')
-            one_send_df.plot(ax = axes[1],y='duration_micro_s', use_index=True,linewidth=2, linestyle='--', marker='o')
-            plt.suptitle(f'Send event durations for {domain_name}', fontsize=16, fontweight='bold')
+            one_df = aws_ofi_nccl_df.loc[(aws_ofi_nccl_df['domainId']==i) &
+                                           (aws_ofi_nccl_df['text']==send_or_recv_tag),]
+
+            one_df = one_df.reset_index()
+
+            one_df['duration_micro_s'] = (one_df['end'] - one_df['start'])/1000
+            one_df.hist(column = 'duration_micro_s', ax = axes[0],density=True, bins=100, edgecolor='blue')
+            one_df.plot(ax = axes[1],y='duration_micro_s', use_index=True,linewidth=2, linestyle='--', marker='o')
+            plt.suptitle(f'{send_or_recv_tag} event durations for {domain_name}', fontsize=16, fontweight='bold')
             plt.tight_layout()
-            plt.savefig
+            plt.savefig(f'{plot_path}/{{send_or_recv_tag}}_events.png')
+
+    def plot_plugin_send_delay(self,aws_ofi_nccl_df,send_domain_ids,domain_names):
+        # Control delay: Time since NCCL gives a Send op til we are ready for RDMA op
+
+        for i in send_domain_ids:
+
+            plot_path = f'{self.get_output_dir()}/plots/{domain_name}'
+
+            os.makedirs(plot_path, exist_ok=True)
+
+            domain_name = domain_names[i-2]
+
+            print(f'Generating plugin send delay plots for {domain_name}....')
+            one_send_comm_df = aws_ofi_nccl_df.loc[(aws_ofi_nccl_df['domainId']==i) ,]
+            one_send_comm_df = one_send_comm_df.reset_index()
+
+            # Map Send_write_seg events with Send_ctrl_recv events
+            counter_send_write_seg = 0
+            counter_send_ctrl_recv = 0
+            one_send_comm_df['counter'] = 0
+            for one_send_comm_df_index, one_send_comm_df_row in one_send_comm_df.iterrows():
+                if one_send_comm_df_row['text']=='Send_write_seg':
+                    counter_send_write_seg = counter_send_write_seg + 1
+                    one_send_comm_df.loc[one_send_comm_df_index,'counter']= counter_send_write_seg
+                if one_send_comm_df_row['text']=='Send_ctrl_recv':
+                    counter_send_ctrl_recv = counter_send_ctrl_recv + 1
+                    one_send_comm_df.loc[one_send_comm_df_index,'counter'] = counter_send_ctrl_recv
+
+            # Compute plugin send delay
+            plugin_send_delay = []
+            for j in range(min(counter_send_write_seg,counter_send_ctrl_recv)):
+                j = j+1
+
+                end_ts = one_send_comm_df.loc[(one_send_comm_df['text']=='Send_write_seg') & (one_send_comm_df['counter']==j),'start'].to_list()[0]
+                start_ts = one_send_comm_df.loc[(one_send_comm_df['text']=='Send_ctrl_recv') & (one_send_comm_df['counter']==j),'start'].to_list()[0]
+
+                latency_micro_sec = (end_ts - start_ts)/1000
+
+                plugin_send_delay.append(latency_micro_sec)
 
 
+            # Plot plugin send delay
+            df_plugin_send_delay = pd.DataFrame(plugin_send_delay, columns=['Value'])
 
+            # Create subplots
+            fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(12, 10))
 
+            df_plugin_send_delay.hist(column = 'duration_micro_s', ax = axes[0],density=True, bins=100, edgecolor='blue')
+            df_plugin_send_delay.plot(ax = axes[1],y='duration_micro_s', use_index=True,linewidth=2, linestyle='--', marker='o')
+            plt.suptitle(f'Plugin send delay event durations for {domain_name}', fontsize=16, fontweight='bold')
+            plt.tight_layout()
+            plt.savefig(f'{plot_path}/plugin_send_delay_events.png')
 
     @log.time("Reducer")
     def reducer_func(self, mapper_res):
@@ -197,6 +257,16 @@ class AwsOfiNcclRecipe(recipe.Recipe):
 
         mapper_res = self.mapper_func(context)
         domain_tuple = self.get_domain_ids(mapper_res)
+
+        aws_ofi_nccl_df = domain_tuple[0]
+        domain_df = domain_tuple[1]
+        send_domain_ids = domain_tuple[2]
+        recv_domain_ids = domain_tuple[3]
+        domain_names = domain_tuple[4]
+
+        self.plot_send_receive_events(aws_ofi_nccl_df,send_domain_ids,domain_names,'Send')
+        self.plot_send_receive_events(aws_ofi_nccl_df,send_domain_ids,domain_names,'Recv')
+        self.plot_plugin_send_delay(self,aws_ofi_nccl_df,send_domain_ids,domain_names)
 
         #self.reducer_func(mapper_res)
 
