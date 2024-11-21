@@ -190,7 +190,7 @@ class AwsOfiNcclRecipe(recipe.Recipe):
             for j in range(min(counter_send_write_seg,counter_send_ctrl_recv)):
                 j = j+1
 
-                end_ts = one_send_comm_df.loc[(one_send_comm_df['text']=='Send_write_seg') | (one_send_comm_df['text']=='Send_eager') & (one_send_comm_df['counter']==j),'start'].to_list()[0]
+                end_ts = one_send_comm_df.loc[((one_send_comm_df['text']=='Send_write_seg') | (one_send_comm_df['text']=='Send_eager')) & (one_send_comm_df['counter']==j),'start'].to_list()[0]
                 start_ts = one_send_comm_df.loc[(one_send_comm_df['text']=='Send_ctrl_recv') & (one_send_comm_df['counter']==j),'start'].to_list()[0]
 
                 latency_micro_sec = (end_ts - start_ts)/1000
