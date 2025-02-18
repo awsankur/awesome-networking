@@ -156,6 +156,7 @@ class AwsOfiNcclRecipe(recipe.Recipe):
             plt.suptitle(f'{send_or_recv_tag} event durations for {domain_name}', fontsize=16, fontweight='bold')
             plt.tight_layout()
             plt.savefig(f'{plot_path}/{send_or_recv_tag}_events.png')
+            plt.close(fig)
 
     def plot_plugin_send_delay(self,aws_ofi_nccl_df,send_domain_ids,domain_names):
         # Control delay: Time since NCCL gives a Send op til we are ready for RDMA op
@@ -165,8 +166,10 @@ class AwsOfiNcclRecipe(recipe.Recipe):
             domain_name = domain_names[i-2]
 
             plot_path = f'{self.get_output_dir()}/plots/{domain_name}'
-
             os.makedirs(plot_path, exist_ok=True)
+
+            data_path = f'{self.get_output_dir()}/data/{domain_name}'
+            os.makedirs(data_path, exist_ok=True)
 
             print(f'Generating plugin send delay plots for {domain_name}....')
             one_send_comm_df = aws_ofi_nccl_df.loc[(aws_ofi_nccl_df['domainId']==i) ,]
@@ -201,6 +204,11 @@ class AwsOfiNcclRecipe(recipe.Recipe):
             # Plot plugin send delay
             df_plugin_send_delay = pd.DataFrame(plugin_send_delay, columns=['Value'])
 
+            df_plugin_send_delay.to_parquet(f"{data_path}/df_plugin_send_delay.parquet")
+
+            if self._parsed_args.csv:
+                df_plugin_send_delay.to_csv(f"{data_path}/df_plugin_send_delay.csv")
+
             # Create subplots
             fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(12, 10))
 
@@ -209,6 +217,8 @@ class AwsOfiNcclRecipe(recipe.Recipe):
             plt.suptitle(f'Plugin send delay event durations for {domain_name}', fontsize=16, fontweight='bold')
             plt.tight_layout()
             plt.savefig(f'{plot_path}/plugin_send_delay_events.png')
+            plt.close(fig)
+
 
     @log.time("Reducer")
     def reducer_func(self, mapper_res):
@@ -276,7 +286,7 @@ class AwsOfiNcclRecipe(recipe.Recipe):
 
         #self.reducer_func(mapper_res)
 
-        #self.save_notebook()
+        self.save_notebook()
         self.save_analysis_file()
 
     @classmethod
